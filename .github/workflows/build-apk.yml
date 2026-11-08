@@ -27,7 +27,7 @@ jobs:
         gradle-version: '8.7'
         cache-disabled: true
 
-    - name: Grant Execute Permission and Fix Wrapper
+    - name: Grant Execute Permission and Fix Missing Files
       run: |
         find . -name "gradlew" -exec chmod +x {} +
         TARGET_DIR="."
@@ -36,8 +36,32 @@ jobs:
         fi
         
         cd "$TARGET_DIR"
+
+        # Tự động tạo lại gradle/libs.versions.toml nếu bị thiếu
+        mkdir -p gradle
+        cat << 'EOF' > gradle/libs.versions.toml
+[versions]
+agp = "8.5.2"
+kotlin = "1.9.24"
+coreKtx = "1.13.1"
+appcompat = "1.7.0"
+material = "1.12.0"
+webkit = "1.11.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+EOF
+
+        # Tự động tạo lại wrapper nếu bị thiếu
         if [ ! -s "gradle/wrapper/gradle-wrapper.jar" ]; then
-          echo "gradle-wrapper.jar is missing. Regenerating wrapper..."
+          echo "Regenerating wrapper..."
           gradle wrapper --gradle-version 8.7
         fi
 
