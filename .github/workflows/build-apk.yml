@@ -21,16 +21,35 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Grant Execute Permission for Gradlew
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: '8.7'
+        cache-disabled: true
+
+    - name: Grant Execute Permission and Fix Wrapper
       run: |
         find . -name "gradlew" -exec chmod +x {} +
+        TARGET_DIR="."
+        if [ ! -f "build.gradle.kts" ] && [ -d "CarNaviLauncher" ]; then
+          TARGET_DIR="CarNaviLauncher"
+        fi
+        
+        cd "$TARGET_DIR"
+        if [ ! -s "gradle/wrapper/gradle-wrapper.jar" ]; then
+          echo "gradle-wrapper.jar is missing. Regenerating wrapper..."
+          gradle wrapper --gradle-version 8.7
+        fi
 
     - name: Build Debug APK
       run: |
-        if [ -f "gradlew" ]; then
-          ./gradlew assembleDebug --no-daemon --stacktrace
-        elif [ -f "CarNaviLauncher/gradlew" ]; then
-          cd CarNaviLauncher
+        TARGET_DIR="."
+        if [ ! -f "build.gradle.kts" ] && [ -d "CarNaviLauncher" ]; then
+          TARGET_DIR="CarNaviLauncher"
+        fi
+        
+        cd "$TARGET_DIR"
+        if [ -s "gradle/wrapper/gradle-wrapper.jar" ]; then
           ./gradlew assembleDebug --no-daemon --stacktrace
         else
           gradle assembleDebug --no-daemon --stacktrace
